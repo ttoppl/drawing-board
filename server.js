@@ -9,7 +9,7 @@ const io = socketIo(server);
 
 // Enable CORS for all origins
 app.use(cors({
-    origin: "*",
+    origin: "https://ttoppl.com",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
 }));
