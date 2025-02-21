@@ -1,44 +1,46 @@
+const cors = require("cors");
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
-const cors = require("cors");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+    cors: {
+        origin: "https://ttoppl.com",  // Allow the frontend domain
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"]
+    }
+});
 
-// Enable CORS for specific origin (your frontend URL)
 app.use(cors({
-    origin: "https://ttoppl.com",  // Frontend URL
+    origin: "https://ttoppl.com",  // This allows the entire domain
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type"]
 }));
 
+// Your server logic
 app.use(express.static("public"));
-
-// Timer and drawing data
-let timeLeft = 300;  // 5 minutes in seconds
 let drawingData = [];
+let timeLeft = 300; // 5 minutes in seconds
 
 function broadcastTime() {
     io.emit("timer", timeLeft); // Broadcast the timer to all clients
 }
 
-// Timer interval, reducing time every second
 setInterval(() => {
     timeLeft--;
-    broadcastTime(); // Broadcast the updated time
+    broadcastTime();  // Broadcast the updated time
 
     if (timeLeft <= 0) {
         timeLeft = 300;  // Reset to 5 minutes
     }
 }, 1000);
 
-// WebSocket connection
+// Socket.io connection
 io.on("connection", (socket) => {
     console.log("A user connected");
 
-    // Send existing drawing data and timer value to the new user
     socket.emit("loadDrawings", drawingData);
     socket.emit("timer", timeLeft);
 
