@@ -19,11 +19,11 @@ app.use(cors({
     allowedHeaders: ["Content-Type"]
 }));
 
-// Your server logic
-app.use(express.static("public"));
 let drawingData = [];
 let timeLeft = 300; // 5 minutes in seconds
+let users = {};
 
+// Broadcast the timer updates
 function broadcastTime() {
     io.emit("timer", timeLeft); // Broadcast the timer to all clients
 }
@@ -41,20 +41,45 @@ setInterval(() => {
 io.on("connection", (socket) => {
     console.log("A user connected");
 
+    // Emit existing drawing data and timer to new user
     socket.emit("loadDrawings", drawingData);
     socket.emit("timer", timeLeft);
 
-    socket.on("draw", (data) => {
-        drawingData.push(data);
-        socket.broadcast.emit("draw", data); // Broadcast drawing to other users
+    // Store user name and color
+    socket.on("setName", (data) => {
+        users[socket.id] = { name: data.name, color: data.color };
     });
 
+    // Handle drawing and erasing
+    socket.on("draw", (data) => {
+        if (data.erasing) {
+            // Remove only the user's own drawing
+            drawingData = drawingData.filter(d => d.name !== users[socket.id].name);
+        } else {
+            // Add the user's drawing to the data
+            drawingData.push(data);
+        }
+        io.emit("draw", { ...data, id: socket.id }); // Broadcast drawing or erasing to all
+    });
+
+    // Handle cursor position updates
+    socket.on("updatePosition", (data) => {
+        if (users[socket.id]) {
+            users[socket.id].x = data.x;
+            users[socket.id].y = data.y;
+            io.emit("updatePosition", { ...users[socket.id], id: socket.id });
+        }
+    });
+
+    // Handle canvas clearing
     socket.on("clearCanvas", () => {
         drawingData = [];
         io.emit("clearCanvas");  // Broadcast canvas clear to all users
     });
 
+    // Handle disconnections
     socket.on("disconnect", () => {
+        delete users[socket.id];
         console.log("A user disconnected");
     });
 });
