@@ -80,6 +80,7 @@ io.on("connection", (socket) => {
 
     // Handle disconnections
     socket.on("disconnect", () => {
+        io.emit("userDisconnected", socket.id);
         delete users[socket.id];
         console.log("A user disconnected");
     });
