@@ -54,11 +54,11 @@ io.on("connection", (socket) => {
     // Handle drawing and erasing
     socket.on("draw", (data) => {
         if (data.erasing) {
-            // Remove only the user's own drawing
-            drawingData = drawingData.filter(d => d.name !== users[socket.id].name);
+            // Remove only the user's own drawings
+            drawingData = drawingData.filter(d => d.id !== socket.id);
         } else {
-            // Add the user's drawing to the data
-            drawingData.push(data);
+            // Add the user's drawing to the data with their ID
+            drawingData.push({ ...data, id: socket.id });
         }
         io.emit("draw", { ...data, id: socket.id }); // Broadcast drawing or erasing to all
     });
