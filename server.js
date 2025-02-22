@@ -1,4 +1,5 @@
-const url = `https://drawing-board-vtwi.onrender.com`; // Replace with your Render URL
+const axios = require('axios');
+const url = `https://drawing-board-vtwi.onrender.com`;
 const interval = 30000; // Interval in milliseconds (30 seconds)
 
 function reloadWebsite() {
