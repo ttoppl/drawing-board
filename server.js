@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "https://ttoppl.com",  // Allow the frontend domain
+        origin: "https://ttoppl.com", // Allow the frontend domain
         methods: ["GET", "POST"],
         allowedHeaders: ["Content-Type"]
     }
