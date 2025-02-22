@@ -84,12 +84,18 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Handle cursor position updates
+    // Handle cursor position updates (no brush/eraser size here)
     socket.on("updatePosition", (data) => {
         if (users[socket.id]) {
             users[socket.id].x = data.x;
             users[socket.id].y = data.y;
-            io.emit("updatePosition", { ...users[socket.id], id: socket.id });
+            io.emit("updatePosition", { 
+                id: socket.id, 
+                name: users[socket.id].name, 
+                color: users[socket.id].color, 
+                x: data.x, 
+                y: data.y 
+            });
         }
     });
 
@@ -97,7 +103,6 @@ io.on("connection", (socket) => {
     socket.on("updateBrushSize", (size) => {
         if (users[socket.id]) {
             users[socket.id].brushSize = size;
-            io.emit("updateBrushSize", { id: socket.id, brushSize: size }); // Broadcast brush size update to all
         }
     });
 
@@ -105,7 +110,6 @@ io.on("connection", (socket) => {
     socket.on("updateEraserSize", (size) => {
         if (users[socket.id]) {
             users[socket.id].eraserSize = size;
-            io.emit("updateEraserSize", { id: socket.id, eraserSize: size }); // Broadcast eraser size update to all
         }
     });
 
