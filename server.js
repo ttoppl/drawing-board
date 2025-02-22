@@ -1,48 +1,135 @@
-// Function to update brush size
-function updateBrushSize() {
-    brushSize = document.getElementById("brushSize").value;
-    socket.emit("updateBrushSize", brushSize); // Send brush size update to server
-}
+const cors = require("cors");
+const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
 
-// Function to update eraser size
-function updateEraserSize() {
-    eraserSize = document.getElementById("eraserSize").value;
-    socket.emit("updateEraserSize", eraserSize); // Send eraser size update to server
-}
-
-// Listen for brush size updates from the server
-socket.on("updateBrushSize", (data) => {
-    if (data.id === socket.id) return; // Ignore local updates
-    const cursorDiv = cursors[data.id];
-    if (cursorDiv) {
-        cursorDiv.querySelector("img").style.width = `${data.brushSize}px`;
-        cursorDiv.querySelector("img").style.height = `${data.brushSize}px`;
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+    cors: {
+        origin: "https://ttoppl.com",  // Allow the frontend domain
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"]
     }
 });
 
-// Listen for eraser size updates from the server
-socket.on("updateEraserSize", (data) => {
-    if (data.id === socket.id) return; // Ignore local updates
-    const cursorDiv = cursors[data.id];
-    if (cursorDiv) {
-        cursorDiv.querySelector("img").style.width = `${data.eraserSize}px`;
-        cursorDiv.querySelector("img").style.height = `${data.eraserSize}px`;
+app.use(cors({
+    origin: "https://ttoppl.com",  // This allows the entire domain
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"]
+}));
+
+let drawingData = [];
+let timeLeft = 300; // 5 minutes in seconds
+let users = {};
+
+// Broadcast the timer updates
+function broadcastTime() {
+    io.emit("timer", timeLeft); // Broadcast the timer to all clients
+}
+
+setInterval(() => {
+    timeLeft--;
+    broadcastTime();  // Broadcast the updated time
+
+    if (timeLeft <= 0) {
+        timeLeft = 300;  // Reset to 5 minutes
     }
+}, 1000);
+
+// Socket.io connection
+io.on("connection", (socket) => {
+    console.log("A user connected");
+
+    // Emit existing drawing data and timer to new user
+    socket.emit("loadDrawings", drawingData);
+    socket.emit("timer", timeLeft);
+
+    // Store user name, color, brush size, and eraser size
+    socket.on("setName", (data) => {
+        users[socket.id] = { 
+            name: data.name, 
+            color: data.color, 
+            brushSize: 5, // Default brush size
+            eraserSize: 30 // Default eraser size
+        };
+        console.log(`${data.name} connected with color ${data.color}`);
+    });
+
+    // Handle drawing and erasing
+    socket.on("draw", (data) => {
+        if (users[socket.id]) {
+            const user = users[socket.id];
+            if (data.erasing) {
+                // Erase a larger area based on the user's eraser size
+                drawingData = drawingData.filter(d => d.id !== socket.id);
+                io.emit("draw", { 
+                    ...data, 
+                    id: socket.id, 
+                    eraserSize: user.eraserSize // Include eraser size in the broadcast
+                });
+            } else {
+                // Add the user's drawing to the data with their ID and brush size
+                drawingData.push({ 
+                    ...data, 
+                    id: socket.id, 
+                    brushSize: user.brushSize // Include brush size in the drawing data
+                });
+                io.emit("draw", { 
+                    ...data, 
+                    id: socket.id, 
+                    brushSize: user.brushSize // Broadcast brush size to all clients
+                });
+            }
+        }
+    });
+
+    // Handle cursor position updates
+    socket.on("updatePosition", (data) => {
+        if (users[socket.id]) {
+            users[socket.id].x = data.x;
+            users[socket.id].y = data.y;
+            io.emit("updatePosition", { ...users[socket.id], id: socket.id });
+        }
+    });
+
+    // Handle brush size updates
+    socket.on("updateBrushSize", (size) => {
+        if (users[socket.id]) {
+            users[socket.id].brushSize = size;
+            io.emit("updateBrushSize", { id: socket.id, brushSize: size }); // Broadcast brush size update to all
+        }
+    });
+
+    // Handle eraser size updates
+    socket.on("updateEraserSize", (size) => {
+        if (users[socket.id]) {
+            users[socket.id].eraserSize = size;
+            io.emit("updateEraserSize", { id: socket.id, eraserSize: size }); // Broadcast eraser size update to all
+        }
+    });
+
+    // Handle canvas clearing
+    socket.on("clearCanvas", () => {
+        drawingData = [];
+        io.emit("clearCanvas");  // Broadcast canvas clear to all users
+    });
+
+    // Handle disconnections
+    socket.on("disconnect", () => {
+        io.emit("userDisconnected", socket.id);
+        delete users[socket.id];
+        console.log("A user disconnected");
+    });
 });
 
-// Handle drawing and erasing with brush and eraser sizes
-socket.on("draw", (data) => {
-    if (data.erasing) {
-        // Erase a larger area based on the eraser size
-        ctx.clearRect(data.x - data.eraserSize / 2, data.y - data.eraserSize / 2, data.eraserSize, data.eraserSize);
-    } else {
-        // Draw with the brush size
-        ctx.strokeStyle = data.color;
-        ctx.lineWidth = data.brushSize;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(data.x1, data.y1);
-        ctx.lineTo(data.x2, data.y2);
-        ctx.stroke();
-    }
+// Clear the canvas every 5 minutes
+setInterval(() => {
+    io.emit("clearCanvas");
+    drawingData = [];
+}, 300000);  // Clear every 5 minutes
+
+// Start the server
+server.listen(process.env.PORT || 3000, "0.0.0.0", () => {
+    console.log("Server running on port " + (process.env.PORT || 3000));
 });
