@@ -103,6 +103,7 @@ io.on("connection", (socket) => {
     socket.on("updateBrushSize", (size) => {
         if (users[socket.id]) {
             users[socket.id].brushSize = size;
+            io.emit("updateBrushSize", { id: socket.id, brushSize: size }); // Broadcast to all clients
         }
     });
 
@@ -110,6 +111,7 @@ io.on("connection", (socket) => {
     socket.on("updateEraserSize", (size) => {
         if (users[socket.id]) {
             users[socket.id].eraserSize = size;
+            io.emit("updateEraserSize", { id: socket.id, eraserSize: size }); // Broadcast to all clients
         }
     });
 
