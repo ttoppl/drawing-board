@@ -48,6 +48,7 @@ io.on("connection", (socket) => {
     // Store user name and color
     socket.on("setName", (data) => {
         users[socket.id] = { name: data.name, color: data.color };
+        console.log(`${data.name} connected with color ${data.color}`);
     });
 
     // Handle drawing and erasing
