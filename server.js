@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
 
     // Store user name and color
     socket.on("setName", (data) => {
-        users[socket.id] = { name: data.name, color: data.color };
+        users[socket.id] = { name: data.name, color: data.color, brushSize: 5, eraserSize: 30 }; // Default brush and eraser sizes
         console.log(`${data.name} connected with color ${data.color}`);
     });
 
@@ -76,6 +76,22 @@ io.on("connection", (socket) => {
     socket.on("clearCanvas", () => {
         drawingData = [];
         io.emit("clearCanvas");  // Broadcast canvas clear to all users
+    });
+
+    // Handle brush size updates
+    socket.on("updateBrushSize", (size) => {
+        if (users[socket.id]) {
+            users[socket.id].brushSize = size;
+            io.emit("updateBrushSize", { id: socket.id, brushSize: size }); // Broadcast brush size update to all
+        }
+    });
+
+    // Handle eraser size updates
+    socket.on("updateEraserSize", (size) => {
+        if (users[socket.id]) {
+            users[socket.id].eraserSize = size;
+            io.emit("updateEraserSize", { id: socket.id, eraserSize: size }); // Broadcast eraser size update to all
+        }
     });
 
     // Handle disconnections
