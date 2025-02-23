@@ -12,10 +12,7 @@ function reloadWebsite() {
     });
 }
 
-
 setInterval(reloadWebsite, interval);
-
-
 
 const cors = require("cors");
 const express = require("express");
@@ -40,7 +37,7 @@ app.use(cors({
 
 let drawingData = [];
 let timeLeft = 300; // 5 minutes in seconds
-let users = {};
+let users = {}; // Store user information, including brush and eraser sizes
 
 // Broadcast the timer updates
 function broadcastTime() {
@@ -103,7 +100,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Handle cursor position updates (no brush/eraser size here)
+    // Handle cursor position updates
     socket.on("updatePosition", (data) => {
         if (users[socket.id]) {
             users[socket.id].x = data.x;
@@ -122,7 +119,7 @@ io.on("connection", (socket) => {
     socket.on("updateBrushSize", (size) => {
         if (users[socket.id]) {
             users[socket.id].brushSize = size;
-            io.emit("updateBrushSize", { id: socket.id, brushSize: size }); // Broadcast to all clients
+            // No need to broadcast the brush size update to all clients
         }
     });
 
@@ -130,7 +127,7 @@ io.on("connection", (socket) => {
     socket.on("updateEraserSize", (size) => {
         if (users[socket.id]) {
             users[socket.id].eraserSize = size;
-            io.emit("updateEraserSize", { id: socket.id, eraserSize: size }); // Broadcast to all clients
+            // No need to broadcast the eraser size update to all clients
         }
     });
 
