@@ -82,19 +82,19 @@ io.on("connection", (socket) => {
                 io.emit("draw", { 
                     ...data, 
                     id: socket.id, 
-                    eraserSize: user.eraserSize // Include eraser size in the broadcast
+                    eraserSize: data.eraserSize // Use the eraser size from the client
                 });
             } else {
                 // Add the user's drawing to the data with their ID and brush size
                 drawingData.push({ 
                     ...data, 
                     id: socket.id, 
-                    brushSize: user.brushSize // Include brush size in the drawing data
+                    brushSize: data.brushSize // Use the brush size from the client
                 });
                 io.emit("draw", { 
                     ...data, 
                     id: socket.id, 
-                    brushSize: user.brushSize // Broadcast brush size to all clients
+                    brushSize: data.brushSize // Broadcast brush size to all clients
                 });
             }
         }
