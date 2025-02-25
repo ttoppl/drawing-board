@@ -44,12 +44,15 @@ function broadcastTime() {
     io.emit("timer", timeLeft); // Broadcast the timer to all clients
 }
 
+// Combined interval for timer and canvas clearing
 setInterval(() => {
     timeLeft--;
     broadcastTime();  // Broadcast the updated time
 
     if (timeLeft <= 0) {
         timeLeft = 300;  // Reset to 5 minutes
+        io.emit("clearCanvas");
+        drawingData = [];
     }
 }, 1000);
 
@@ -144,12 +147,6 @@ io.on("connection", (socket) => {
         console.log("A user disconnected");
     });
 });
-
-// Clear the canvas every 5 minutes
-setInterval(() => {
-    io.emit("clearCanvas");
-    drawingData = [];
-}, 300000);  // Clear every 5 minutes
 
 // Start the server
 server.listen(process.env.PORT || 3000, "0.0.0.0", () => {
