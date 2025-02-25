@@ -50,7 +50,7 @@ setInterval(() => {
     broadcastTime();  // Broadcast the updated time
 
     if (timeLeft <= 0) {
-        timeLeft = 300;  // Reset to 5 minutes
+        timeLeft = 600;  // Reset to 5 minutes
         io.emit("clearCanvas");
         drawingData = [];
     }
