@@ -36,7 +36,7 @@ app.use(cors({
 }));
 
 let drawingData = [];
-let timeLeft = 300; // 5 minutes in seconds
+let timeLeft = 600; // 10 minutes in seconds
 let users = {}; // Store user information, including brush and eraser sizes
 
 // Broadcast the timer updates
